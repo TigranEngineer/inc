@@ -67,4 +67,4 @@ if ! wp user get $WP_REGULAR_USER --allow-root --path=/var/www > /dev/null 2>&1;
     wp user create $WP_REGULAR_USER $WP_REGULAR_EMAIL --role=subscriber --user_pass=$WP_REGULAR_PASS --path=/var/www --allow-root
 fi
 
-exec /usr/sbin/php-fpm8 -F
+exec /usr/sbin/php-fpm82 -F

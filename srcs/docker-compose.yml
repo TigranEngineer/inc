@@ -17,6 +17,7 @@ services:
       - ./requirements/nginx/tools:/etc/nginx/ssl/
       - wp-volume:/var/www/
     restart: always
+    image: nginx
 
   mariadb:
     build:
@@ -35,6 +36,7 @@ services:
     volumes:
       - db-volume:/var/lib/mysql
     restart: always
+    image: mariadb
 
   wordpress:
     build:
@@ -63,6 +65,7 @@ services:
       - WP_REGULAR_USER=${WP_REGULAR_USER}
       - WP_REGULAR_EMAIL=${WP_REGULAR_EMAIL}
       - WP_REGULAR_PASS=${WP_REGULAR_PASS}
+    image: wordpress
 
 volumes:
   wp-volume:
