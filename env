@@ -1,1 +1,0 @@
-DB_NAME=wordpress DB_USER=wpuser DB_PASS=wppass DB_ROOT=rootpass DOMAIN_NAME=yourlogin.42.fr WP_ADMIN_USER=siteowner WP_ADMIN_PASS=adminpass123 WP_ADMIN_EMAIL=siteowner@yourlogin.42.fr WP_REGULAR_USER=wpuser WP_REGULAR_EMAIL=wpuser@yourlogin.42.fr WP_REGULAR_PASS=regularpass123

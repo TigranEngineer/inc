@@ -1,7 +1,11 @@
 #!/bin/sh
 set -e
 
-# Wait for MariaDB to be ready
+if ! php -m | grep -q Phar; then
+    echo "Installing php8-phar..."
+    apk add --no-cache php8-phar
+fi
+
 until php -r "
     \$host = 'mariadb';
     \$user = getenv('DB_USER');
@@ -18,7 +22,6 @@ until php -r "
     sleep 2
 done
 
-# Create wp-config.php if it doesn't exist
 if [ ! -f /var/www/wp-config.php ]; then
     cat << EOF > /var/www/wp-config.php
 <?php
@@ -42,12 +45,10 @@ require_once ABSPATH . 'wp-settings.php';
 EOF
 fi
 
-# Install WP-CLI
 wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 chmod +x wp-cli.phar
 mv wp-cli.phar /usr/local/bin/wp
 
-# Install WordPress if not installed
 if ! wp core is-installed --allow-root --path=/var/www; then
     echo "Installing WordPress..."
     wp core install \
@@ -61,11 +62,9 @@ if ! wp core is-installed --allow-root --path=/var/www; then
         --allow-root
 fi
 
-# Create regular user if not exists
 if ! wp user get $WP_REGULAR_USER --allow-root --path=/var/www > /dev/null 2>&1; then
     echo "Creating regular user..."
     wp user create $WP_REGULAR_USER $WP_REGULAR_EMAIL --role=subscriber --user_pass=$WP_REGULAR_PASS --path=/var/www --allow-root
 fi
 
-# Start PHP-FPM
 exec /usr/sbin/php-fpm8 -F

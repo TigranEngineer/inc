@@ -1,0 +1,63 @@
+#!/bin/sh
+set -e
+
+# Wait for MariaDB to be ready
+#until mysqladmin -h mariadb -u "$DB_USER" -p"$DB_PASS" ping --silent; do
+#  echo "Waiting for MariaDB..."
+#  sleep 2
+#done
+
+# Create wp-config.php if it doesn't exist
+if [ ! -f /var/www/wp-config.php ]; then
+  cat << EOF > /var/www/wp-config.php
+<?php
+define( 'DB_NAME', '${DB_NAME}' );
+define( 'DB_USER', '${DB_USER}' );
+define( 'DB_PASSWORD', '${DB_PASS}' );
+define( 'DB_HOST', 'mariadb' );
+define( 'DB_CHARSET', 'utf8' );
+define( 'DB_COLLATE', '' );
+define('FS_METHOD','direct');
+\$table_prefix = 'wp_';
+define( 'WP_DEBUG', false );
+if ( ! defined( 'ABSPATH' ) ) {
+define( 'ABSPATH', __DIR__ . '/' );}
+define( 'WP_REDIS_HOST', 'redis' );
+define( 'WP_REDIS_PORT', 6379 );
+define( 'WP_REDIS_TIMEOUT', 1 );
+define( 'WP_REDIS_READ_TIMEOUT', 1 );
+define( 'WP_REDIS_DATABASE', 0 );
+require_once ABSPATH . 'wp-settings.php';
+EOF
+fi
+
+# Check if WordPress is installed
+if ! wp core is-installed --path=/var/www --allow-root; then
+  echo "Installing WordPress..."
+  wp core install \
+    --path=/var/www \
+    --url=$DOMAIN_NAME \
+    --title="My WordPress Site" \
+    --admin_user=$WP_ADMIN_USER \
+    --admin_password=$WP_ADMIN_PASS \
+    --admin_email=$WP_ADMIN_EMAIL \
+    --skip-email \
+    --allow-root
+fi
+
+# Create regular user if not exists
+if ! wp user get $WP_REGULAR_USER --path=/var/www --allow-root > /dev/null 2>&1; then
+  echo "Creating regular user..."
+  wp user create $WP_REGULAR_USER $WP_REGULAR_EMAIL --role=subscriber --user_pass=$WP_REGULAR_PASS --path=/var/www --allow-root
+fi
+
+# Save credentials to a file for reference
+CREDENTIALS_FILE="/var/www/wp_credentials.txt"
+echo "Admin User: $WP_ADMIN_USER" > "$CREDENTIALS_FILE"
+echo "Admin Password: $WP_ADMIN_PASS" >> "$CREDENTIALS_FILE"
+echo "Regular User: $WP_REGULAR_USER" >> "$CREDENTIALS_FILE"
+echo "Regular Password: $WP_REGULAR_PASS" >> "$CREDENTIALS_FILE"
+chmod 600 "$CREDENTIALS_FILE"
+
+# Start PHP-FPM
+exec /usr/sbin/php-fpm8 -F
